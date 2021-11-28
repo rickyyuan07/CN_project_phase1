@@ -23,30 +23,30 @@ using namespace filesystem;
 
 set<string> user_id_set;
 void* serve(void* _fd){
-    int fd = (int64_t)_fd;
-    write(fd, "input your username:", sizeof("input your username:"));
+    int sockfd = (int64_t)_fd;
+    write(sockfd, "input your username:", sizeof("input your username:"));
     char name[100] = {};
-    recv(fd, name, sizeof(name), MSG_WAITALL);
+    recv(sockfd, name, sizeof(name), MSG_WAITALL);
     while (user_id_set.count(name) == 1){
-        write(fd, "username is in used, please try another:", sizeof("username is in used, please try another:"));
-        recv(fd, name, sizeof(name), MSG_WAITALL);
+        write(sockfd, "username is in used, please try another:", sizeof("username is in used, please try another:"));
+        recv(sockfd, name, sizeof(name), MSG_WAITALL);
     }
-    write(fd, "connect successfully", sizeof("connect successfully"));
+    write(sockfd, "connect successfully", sizeof("connect successfully"));
     string tmp(name);
     user_id_set.insert(tmp);
 
     while (1) {
         char ins[100] = {};
         // check if socket is still alive
-        int tmp = recv(fd, ins, sizeof(ins), MSG_PEEK);
+        int tmp = recv(sockfd, ins, sizeof(ins), MSG_PEEK);
         if(tmp == 0){
-            fprintf(stderr, "client fd: %d has closed.\n", fd);
+            fprintf(stderr, "client fd: %d has closed.\n", sockfd);
             user_id_set.erase(name);
             break;
         }
         
-        recv(fd, ins, sizeof(ins), MSG_WAITALL);
-        fprintf(stderr, "got message from client %d typed: \"%s\" size 100=%d\n", fd, ins, tmp); // DEBUG
+        recv(sockfd, ins, sizeof(ins), MSG_WAITALL);
+        fprintf(stderr, "got message from client %d typed: \"%s\" size 100=%d\n", sockfd, ins, tmp); // DEBUG
 
         string s(ins);
         istringstream in(s);
@@ -59,24 +59,24 @@ void* serve(void* _fd){
             // file to put does not exist
             if(not exists(serverpath)){
                 sprintf(ins, "The %s doesn't exist\n", v[1].c_str());
-                write(fd, ins, sizeof(ins));
-                fprintf(stderr, "To client %d: file: \"%s\" not exists\n", fd, v[1].c_str()); // DEBUG
+                write(sockfd, ins, sizeof(ins));
+                fprintf(stderr, "To client %d: file: \"%s\" not exists\n", sockfd, v[1].c_str()); // DEBUG
                 continue;
             }
             else{
                 sprintf(ins, "file exists, start downloading\n");
-                write(fd, ins, sizeof(ins));
-                fprintf(stderr, "To client %d: server start uploading \"%s\"\n", fd, v[1].c_str()); // DEBUG
+                write(sockfd, ins, sizeof(ins));
+                fprintf(stderr, "To client %d: server start uploading \"%s\"\n", sockfd, v[1].c_str()); // DEBUG
             }
             
             int filesz = file_size(serverpath);
-            write(fd, &filesz, sizeof(filesz));
+            write(sockfd, &filesz, sizeof(filesz));
             // get the file from server
             char filebuf[2048] = {};
             FILE *put_fp = fopen(serverpath.c_str(), "rb");
             while(fread(filebuf, sizeof(char), 2048, put_fp) > 0){
-                if(send(fd, filebuf, sizeof(filebuf), MSG_NOSIGNAL) < 0){ // write file content
-                    fprintf(stderr, "client %d has closed, file transmission stops\n", fd);
+                if(send(sockfd, filebuf, sizeof(filebuf), MSG_NOSIGNAL) < 0){ // write file content
+                    fprintf(stderr, "client %d has closed, file transmission stops\n", sockfd);
                     fclose(put_fp);
                     user_id_set.erase(name);
                     return 0;
@@ -84,8 +84,8 @@ void* serve(void* _fd){
             }
             fclose(put_fp);
             sprintf(ins, "get %s successfully\n", v[1].c_str());
-            send(fd, ins, sizeof(ins), MSG_NOSIGNAL);
-            fprintf(stderr, "To client %d: file: \"%s\" get successfully\n", fd, v[1].c_str()); // DEBUG
+            send(sockfd, ins, sizeof(ins), MSG_NOSIGNAL);
+            fprintf(stderr, "To client %d: file: \"%s\" get successfully\n", sockfd, v[1].c_str()); // DEBUG
         }
         else if(v[0] == "put"){
             string serverpath = "./server_dir/" + v[1];
@@ -93,18 +93,20 @@ void* serve(void* _fd){
             char filebuf[2048] = {};
             FILE *wr_fp = fopen(serverpath.c_str(), "wb");
             int filesz;
-            recv(fd, &filesz, sizeof(filesz), MSG_WAITALL);
-            fprintf(stderr, "put from client %d: file name \"%s\" with size = %d\n", fd, v[1].c_str(), filesz); // DEBUG
+            recv(sockfd, &filesz, sizeof(filesz), MSG_WAITALL);
+            fprintf(stderr, "put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
             while(filesz > 0){
-                int suc = recv(fd, filebuf, sizeof(filebuf), MSG_WAITALL);
+                int suc = recv(sockfd, filebuf, sizeof(filebuf), MSG_WAITALL);
                 if(suc != sizeof(filebuf)){
                     cerr << "did not receive correct number of bytes: " << sizeof(filebuf) << endl;
+                }
+                if(suc < 0){ // client already closed
+                    return 0;
                 }
                 fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);
                 filesz -= suc;
             }
-            fprintf(stderr, "Server successfully put from client %d\
-            : file name \"%s\" with size = %d\n", fd, v[1].c_str(), filesz); // DEBUG
+            fprintf(stderr, "Server successfully put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
         }
         else if(v[0] == "ls"){
             vector<string> ls_vector;
@@ -116,10 +118,10 @@ void* serve(void* _fd){
             for(string s : ls_vector){
                 to_client += s.substr(13) + "\n"; // 13 for sizeof("./server_dir/")
             }
-            write(fd, to_client.c_str(), 2048);
+            write(sockfd, to_client.c_str(), 2048);
         }
     }
-    close(fd);
+    close(sockfd);
     user_id_set.erase(name);
     return 0;
 }
@@ -148,15 +150,7 @@ int main(int argc, char* argv[]) {
         ERR_EXIT("listen");
     }
     fprintf(stderr, "\nstarting on port:%d, fd %d\n", atoi(argv[1]), svr_fd);
-
     
-    // char hostbuffer[256];
-    // struct hostent *host_entry;
-    // host_entry = gethostbyname(hostbuffer);
-    // cout << inet_ntoa(*((struct in_addr*)host_entry->h_addr_list[0])) << endl;
-
-    // Loop for handling connections
-    // fprintf(stderr, "\nstarting on %.80s, port %d, fd %d, maxconn %d...\n", svr.hostname, svr.port, svr_fd, maxfd);
     clilen = sizeof(cliaddr);
     pthread_t t[client_num];
     while (1) {
