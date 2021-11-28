@@ -88,7 +88,7 @@ void* serve(void* _fd){
             fclose(put_fp);
             sprintf(response, "get %s successfully\n", v[1].c_str());
             send(sockfd, response, sizeof(response), MSG_NOSIGNAL);
-            fprintf(stderr, "To client %d: file: \"%s\" get successfully\n", sockfd, v[1].c_str()); // DEBUG
+            fprintf(stderr, "\nTo client %d: file: \"%s\" get successfully\n", sockfd, v[1].c_str()); // DEBUG
         }
         else if(v[0] == "put"){
             string serverpath = "./server_dir/" + v[1];
@@ -112,7 +112,7 @@ void* serve(void* _fd){
                 cnt++;
                 if(cnt % 500 == 0) fprintf(stderr, "."); // DEBUG
             }
-            fprintf(stderr, "Server successfully put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
+            fprintf(stderr, "\nServer successfully put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
         }
         else if(v[0] == "ls"){
             vector<string> ls_vector;
