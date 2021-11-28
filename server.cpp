@@ -78,8 +78,8 @@ void* serve(void* _fd){
                 send(fd, filebuf, sizeof(filebuf), MSG_NOSIGNAL); // write file content
             }
             sprintf(ins, "get %s successfully\n", v[1].c_str());
-            write(fd, ins, sizeof(ins));
-                fprintf(stderr, "To client %d: file: \"%s\" get successfully\n", fd, v[1].c_str()); // DEBUG
+            send(fd, ins, sizeof(ins), MSG_NOSIGNAL);
+            fprintf(stderr, "To client %d: file: \"%s\" get successfully\n", fd, v[1].c_str()); // DEBUG
         }
         else if(v[0] == "put"){
             string serverpath = "./server_dir/" + v[1];
