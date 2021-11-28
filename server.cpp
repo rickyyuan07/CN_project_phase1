@@ -75,8 +75,13 @@ void* serve(void* _fd){
             char filebuf[2048] = {};
             FILE *put_fp = fopen(serverpath.c_str(), "rb");
             while(fread(filebuf, sizeof(char), 2048, put_fp) > 0){
-                send(fd, filebuf, sizeof(filebuf), MSG_NOSIGNAL); // write file content
+                if(send(fd, filebuf, sizeof(filebuf), MSG_NOSIGNAL) == -1){ // write file content
+                    fprintf(stderr, "client %d has closed, file transmission stops\n", fd);
+                    fclose(put_fp);
+                    continue;
+                }
             }
+            fclose(put_fp);
             sprintf(ins, "get %s successfully\n", v[1].c_str());
             send(fd, ins, sizeof(ins), MSG_NOSIGNAL);
             fprintf(stderr, "To client %d: file: \"%s\" get successfully\n", fd, v[1].c_str()); // DEBUG
