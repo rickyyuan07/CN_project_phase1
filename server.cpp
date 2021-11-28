@@ -75,7 +75,7 @@ void* serve(void* _fd){
             char filebuf[2048] = {};
             FILE *put_fp = fopen(serverpath.c_str(), "rb");
             while(fread(filebuf, sizeof(char), 2048, put_fp) > 0){
-                write(fd, filebuf, sizeof(filebuf)); // write file content
+                send(fd, filebuf, sizeof(filebuf), MSG_NOSIGNAL); // write file content
             }
             sprintf(ins, "get %s successfully\n", v[1].c_str());
             write(fd, ins, sizeof(ins));
