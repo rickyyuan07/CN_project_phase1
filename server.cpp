@@ -77,7 +77,7 @@ void* serve(void* _fd){
             int cnt = 0;
             while(fread(filebuf, sizeof(char), 2048, put_fp) > 0){
                 if(send(sockfd, filebuf, sizeof(filebuf), MSG_NOSIGNAL) < 0){ // write file content
-                    fprintf(stderr, "client %d has closed, file transmission stops\n", sockfd);
+                    fprintf(stderr, "\nclient %d has closed, file transmission stops\n", sockfd);
                     fclose(put_fp);
                     user_id_set.erase(name);
                     return 0;
@@ -102,7 +102,7 @@ void* serve(void* _fd){
             while(filesz > 0){
                 int suc = recv(sockfd, filebuf, sizeof(filebuf), MSG_WAITALL);
                 if(suc != sizeof(filebuf)){
-                    cerr << "did not receive correct number of bytes, only get: " << suc << endl;
+                    fprintf(stderr, "\ndid not receive correct number of bytes, only get: %d\n", suc);
                 }
                 if(suc <= 0){ // client already closed
                     return 0;
