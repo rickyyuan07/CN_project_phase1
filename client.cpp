@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
             write(sockfd, s.c_str(), 100);
             char lsbuf[2048] = {}; // buffer for recv ls result from server
             recv(sockfd, lsbuf, sizeof(lsbuf), MSG_WAITALL);
-            puts(lsbuf);
+            printf("%s", lsbuf);
         }
     }
     close(sockfd);

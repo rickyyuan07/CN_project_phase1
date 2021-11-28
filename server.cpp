@@ -40,14 +40,13 @@ void* serve(void* _fd){
         // check if socket is still alive
         int tmp = recv(fd, ins, sizeof(ins), MSG_PEEK);
         if(tmp == 0){
-            printf("client fd: %d has closed.\n", fd);
+            fprintf(stderr, "client fd: %d has closed.\n", fd);
             user_id_set.erase(name);
             break;
         }
         
         recv(fd, ins, sizeof(ins), MSG_WAITALL);
-        printf("client %d typed: \"%s\", %d\n", fd, ins, tmp);
-        fflush(stdout);
+        fprintf(stderr, "got message from client %d typed: \"%s\" size 100=%d\n", fd, ins, tmp); // DEBUG
 
         string s(ins);
         istringstream in(s);
@@ -61,11 +60,13 @@ void* serve(void* _fd){
             if(not exists(serverpath)){
                 sprintf(ins, "The %s doesn't exist\n", v[1].c_str());
                 write(fd, ins, sizeof(ins));
+                fprintf(stderr, "To client %d: file: \"%s\" not exists\n", fd, v[1].c_str()); // DEBUG
                 continue;
             }
             else{
                 sprintf(ins, "file exists, start downloading\n");
                 write(fd, ins, sizeof(ins));
+                fprintf(stderr, "To client %d: server start uploading \"%s\"\n", fd, v[1].c_str()); // DEBUG
             }
             
             int filesz = file_size(serverpath);
@@ -78,6 +79,7 @@ void* serve(void* _fd){
             }
             sprintf(ins, "get %s successfully\n", v[1].c_str());
             write(fd, ins, sizeof(ins));
+                fprintf(stderr, "To client %d: file: \"%s\" get successfully\n", fd, v[1].c_str()); // DEBUG
         }
         else if(v[0] == "put"){
             string serverpath = "./server_dir/" + v[1];
@@ -86,18 +88,17 @@ void* serve(void* _fd){
             FILE *wr_fp = fopen(serverpath.c_str(), "wb");
             int filesz;
             recv(fd, &filesz, sizeof(filesz), MSG_WAITALL);
-            cout << "got size " << filesz << endl;
+            fprintf(stderr, "put from client %d: file name \"%s\" with size = %d\n", fd, v[1].c_str(), filesz); // DEBUG
             while(filesz > 0){
                 int suc = recv(fd, filebuf, sizeof(filebuf), MSG_WAITALL);
-                // cout << suc << endl;
                 if(suc != sizeof(filebuf)){
                     cerr << "did not receive correct number of bytes: " << sizeof(filebuf) << endl;
                 }
                 fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);
-                fflush(wr_fp);
                 filesz -= suc;
             }
-            cerr << "server: successfully write " + v[1] << endl;
+            fprintf(stderr, "Server successfully put from client %d\
+            : file name \"%s\" with size = %d\n", fd, v[1].c_str(), filesz); // DEBUG
         }
         else if(v[0] == "ls"){
             vector<string> ls_vector;
