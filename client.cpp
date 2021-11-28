@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
             recv(sockfd, &filesz, sizeof(filesz), MSG_WAITALL);
             // fprintf(stderr, "get file size = %d\n", filesz);
             while(filesz > 0){
-                int suc = recv(sockfd, filebuf, sizeof(filebuf), MSG_WAITALL);
+                int suc = recv(sockfd, filebuf, min((int)sizeof(filebuf), filesz), MSG_WAITALL);
                 fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);
                 fflush(wr_fp);
                 filesz -= suc;
@@ -113,14 +113,12 @@ int main(int argc, char *argv[]) {
             // put the file to server
             char filebuf[2048] = {};
             FILE *put_fp = fopen(clientpath.c_str(), "rb");
-            while(fread(filebuf, sizeof(char), 2048, put_fp) > 0){
-                int tot = sizeof(filebuf);
-                int remain = sizeof(filebuf);
-                int suc = write(sockfd, filebuf, sizeof(filebuf)); // write file content
-                remain -= suc;
-                while(remain > 0){
-                    remain -= write(sockfd, filebuf+(tot-remain), remain);
-                }
+            while(fread(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), put_fp) > 0){
+                int suc = write(sockfd, filebuf, min((int)sizeof(filebuf), filesz)); // write file content
+                filesz -= suc;
+                // if (suc != sizeof(filebuf)){
+                //     cerr << "remain: " << filesz << endl;
+                // }
             }
             printf("put %s successfully\n", v[1].c_str());
         }
