@@ -78,6 +78,7 @@ void* serve(void* _fd){
                 if(send(fd, filebuf, sizeof(filebuf), MSG_NOSIGNAL) < 0){ // write file content
                     fprintf(stderr, "client %d has closed, file transmission stops\n", fd);
                     fclose(put_fp);
+                    user_id_set.erase(name);
                     return 0;
                 }
             }
@@ -119,6 +120,7 @@ void* serve(void* _fd){
         }
     }
     close(fd);
+    user_id_set.erase(name);
     return 0;
 }
 const int client_num = 10;
