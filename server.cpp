@@ -45,7 +45,7 @@ void* serve(void* _fd){
         }
         
         recv(sockfd, ins, sizeof(ins), MSG_WAITALL);
-        fprintf(stderr, "got message from client %d typed: \"%s\"n", sockfd, ins); // DEBUG
+        fprintf(stderr, "got message from client %d typed: \"%s\"\n", sockfd, ins); // DEBUG
 
         string s(ins);
         istringstream in(s);
@@ -74,6 +74,7 @@ void* serve(void* _fd){
             // get the file from server
             char filebuf[2048] = {};
             FILE *put_fp = fopen(serverpath.c_str(), "rb");
+            int cnt = 0;
             while(fread(filebuf, sizeof(char), 2048, put_fp) > 0){
                 if(send(sockfd, filebuf, sizeof(filebuf), MSG_NOSIGNAL) < 0){ // write file content
                     fprintf(stderr, "client %d has closed, file transmission stops\n", sockfd);
@@ -81,7 +82,8 @@ void* serve(void* _fd){
                     user_id_set.erase(name);
                     return 0;
                 }
-                fprintf(stderr, "."); // DEBUG
+                cnt++;
+                if(cnt % 50 == 0) fprintf(stderr, "."); // DEBUG
             }
             fclose(put_fp);
             sprintf(response, "get %s successfully\n", v[1].c_str());
@@ -96,6 +98,7 @@ void* serve(void* _fd){
             int filesz;
             recv(sockfd, &filesz, sizeof(filesz), MSG_WAITALL);
             fprintf(stderr, "put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
+            int cnt = 0;
             while(filesz > 0){
                 int suc = recv(sockfd, filebuf, sizeof(filebuf), MSG_WAITALL);
                 if(suc != sizeof(filebuf)){
@@ -106,6 +109,8 @@ void* serve(void* _fd){
                 }
                 fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);
                 filesz -= suc;
+                cnt++;
+                if(cnt % 50 == 0) fprintf(stderr, "."); // DEBUG
             }
             fprintf(stderr, "Server successfully put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
         }
