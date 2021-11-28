@@ -39,13 +39,13 @@ void* serve(void* _fd){
         char ins[MSGSIZE] = {};
         // check if socket is still alive
         if(recv(sockfd, ins, sizeof(ins), MSG_PEEK) <= 0){
-            fprintf(stderr, "client fd: %d has closed.\n", sockfd); // DEBUG
+            // fprintf(stderr, "client fd: %d has closed.\n", sockfd); // DEBUG
             user_id_set.erase(name);
             break;
         }
         
         recv(sockfd, ins, sizeof(ins), MSG_WAITALL);
-        fprintf(stderr, "got message from client %d typed: \"%s\"\n", sockfd, ins); // DEBUG
+        // fprintf(stderr, "got message from client %d typed: \"%s\"\n", sockfd, ins); // DEBUG
 
         string s(ins);
         istringstream in(s);
@@ -60,14 +60,14 @@ void* serve(void* _fd){
             if(not exists(serverpath)){
                 sprintf(response, "The %s doesn't exist\n", v[1].c_str());
                 write(sockfd, response, sizeof(response));
-                fprintf(stderr, "To client %d: file: \"%s\" not exists\n", sockfd, v[1].c_str()); // DEBUG
+                // fprintf(stderr, "To client %d: file: \"%s\" not exists\n", sockfd, v[1].c_str()); // DEBUG
                 continue;
             }
             else{
                 sprintf(response, "file exists, start downloading\n");
                 write(sockfd, response, sizeof(response));
             }
-            fprintf(stderr, "To client %d: server start uploading \"%s\"\n", sockfd, v[1].c_str()); // DEBUG
+            // fprintf(stderr, "To client %d: server start uploading \"%s\"\n", sockfd, v[1].c_str()); // DEBUG
             
             int filesz = file_size(serverpath);
             write(sockfd, &filesz, sizeof(filesz));
@@ -77,18 +77,18 @@ void* serve(void* _fd){
             int cnt = 0;
             while(fread(filebuf, sizeof(char), 2048, put_fp) > 0){
                 if(send(sockfd, filebuf, sizeof(filebuf), MSG_NOSIGNAL) < 0){ // write file content
-                    fprintf(stderr, "\nclient %d has closed, file transmission stops\n", sockfd);
+                    // fprintf(stderr, "\nclient %d has closed, file transmission stops\n", sockfd);
                     fclose(put_fp);
                     user_id_set.erase(name);
                     return 0;
                 }
                 cnt++;
-                if(cnt % 500 == 0) fprintf(stderr, "."); // DEBUG
+                // if(cnt % 500 == 0) fprintf(stderr, "."); // DEBUG
             }
             fclose(put_fp);
             sprintf(response, "get %s successfully\n", v[1].c_str());
             send(sockfd, response, sizeof(response), MSG_NOSIGNAL);
-            fprintf(stderr, "\nTo client %d: file: \"%s\" get successfully\n", sockfd, v[1].c_str()); // DEBUG
+            // fprintf(stderr, "\nTo client %d: file: \"%s\" get successfully\n", sockfd, v[1].c_str()); // DEBUG
         }
         else if(v[0] == "put"){
             string serverpath = "./server_dir/" + v[1];
@@ -97,12 +97,12 @@ void* serve(void* _fd){
             FILE *wr_fp = fopen(serverpath.c_str(), "wb");
             int filesz;
             recv(sockfd, &filesz, sizeof(filesz), MSG_WAITALL);
-            fprintf(stderr, "put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
+            // fprintf(stderr, "put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
             int cnt = 0;
             while(filesz > 0){
                 int suc = recv(sockfd, filebuf, sizeof(filebuf), MSG_WAITALL);
                 if(suc != sizeof(filebuf)){
-                    fprintf(stderr, "\ndid not receive correct number of bytes, only get: %d\n", suc);
+                    // fprintf(stderr, "\ndid not receive correct number of bytes, only get: %d\n", suc);
                 }
                 if(suc <= 0){ // client already closed
                     return 0;
@@ -110,9 +110,9 @@ void* serve(void* _fd){
                 fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);
                 filesz -= suc;
                 cnt++;
-                if(cnt % 500 == 0) fprintf(stderr, "."); // DEBUG
+                // if(cnt % 500 == 0) fprintf(stderr, "."); // DEBUG
             }
-            fprintf(stderr, "\nServer successfully put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
+            // fprintf(stderr, "\nServer successfully put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
         }
         else if(v[0] == "ls"){
             vector<string> ls_vector;
@@ -155,13 +155,13 @@ int main(int argc, char* argv[]) {
     if (listen(svr_fd, 1024) < 0) {
         ERR_EXIT("listen");
     }
-    fprintf(stderr, "\nstarting on port:%d, fd %d\n", atoi(argv[1]), svr_fd);
+    // fprintf(stderr, "\nstarting on port:%d, fd %d\n", atoi(argv[1]), svr_fd);
     
     clilen = sizeof(cliaddr);
     pthread_t t[client_num];
     while (1) {
         int conn_fd = accept(svr_fd, (struct sockaddr*)&cliaddr, (socklen_t*)&clilen);
-        fprintf(stderr, "getting a new request... fd %d\n", conn_fd);
+        // fprintf(stderr, "getting a new request... fd %d\n", conn_fd);
         pthread_create(t, NULL, serve, (void *)(int64_t)conn_fd);
     }
     return 0;

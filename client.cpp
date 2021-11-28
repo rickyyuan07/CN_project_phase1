@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 
     if (connect(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr)) == -1) ERR_EXIT("connect");
 
-    fprintf(stderr, "\nClient starts connection to %s:%d, fd = %d\n", ip, port, sockfd); // DEBUG
+    // fprintf(stderr, "\nClient starts connection to %s:%d, fd = %d\n", ip, port, sockfd); // DEBUG
 
     char buf[MSGSIZE] = {}, name[MSGSIZE] = {};
     recv(sockfd, buf, sizeof(buf), 0);
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
             FILE *wr_fp = fopen(clientpath.c_str(), "wb");
             int filesz;
             recv(sockfd, &filesz, sizeof(filesz), MSG_WAITALL);
-            fprintf(stderr, "get file size = %d\n", filesz);
+            // fprintf(stderr, "get file size = %d\n", filesz);
             while(filesz > 0){
                 int suc = recv(sockfd, filebuf, sizeof(filebuf), MSG_WAITALL);
                 fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);
