@@ -75,10 +75,10 @@ void* serve(void* _fd){
             char filebuf[2048] = {};
             FILE *put_fp = fopen(serverpath.c_str(), "rb");
             while(fread(filebuf, sizeof(char), 2048, put_fp) > 0){
-                if(send(fd, filebuf, sizeof(filebuf), MSG_NOSIGNAL) == -1){ // write file content
+                if(send(fd, filebuf, sizeof(filebuf), MSG_NOSIGNAL) < 0){ // write file content
                     fprintf(stderr, "client %d has closed, file transmission stops\n", fd);
                     fclose(put_fp);
-                    continue;
+                    return 0;
                 }
             }
             fclose(put_fp);
