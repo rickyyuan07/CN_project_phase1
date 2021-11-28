@@ -77,7 +77,7 @@ void* serve(void* _fd){
             int cnt = 0;
             while(fread(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), put_fp) > 0){
                 int suc = send(sockfd, filebuf, min((int)sizeof(filebuf), filesz), MSG_NOSIGNAL);
-                if(suc < 0){ // write file content
+                if(suc < 0 or suc != min((int)sizeof(filebuf), filesz)){ // write file content
                     // fprintf(stderr, "\nclient %d has closed, file transmission stops\n", sockfd);
                     fclose(put_fp);
                     user_id_set.erase(name);

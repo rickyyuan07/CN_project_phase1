@@ -115,10 +115,10 @@ int main(int argc, char *argv[]) {
             FILE *put_fp = fopen(clientpath.c_str(), "rb");
             while(fread(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), put_fp) > 0){
                 int suc = write(sockfd, filebuf, min((int)sizeof(filebuf), filesz)); // write file content
+                if (suc != min((int)sizeof(filebuf), filesz)){
+                    cerr << "remain: " << filesz << endl;
+                }
                 filesz -= suc;
-                // if (suc != sizeof(filebuf)){
-                //     cerr << "remain: " << filesz << endl;
-                // }
             }
             printf("put %s successfully\n", v[1].c_str());
         }
