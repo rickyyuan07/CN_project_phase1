@@ -83,7 +83,7 @@ void* serve(void* _fd){
                     return 0;
                 }
                 cnt++;
-                if(cnt % 50 == 0) fprintf(stderr, "."); // DEBUG
+                if(cnt % 500 == 0) fprintf(stderr, "."); // DEBUG
             }
             fclose(put_fp);
             sprintf(response, "get %s successfully\n", v[1].c_str());
@@ -110,7 +110,7 @@ void* serve(void* _fd){
                 fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);
                 filesz -= suc;
                 cnt++;
-                if(cnt % 50 == 0) fprintf(stderr, "."); // DEBUG
+                if(cnt % 500 == 0) fprintf(stderr, "."); // DEBUG
             }
             fprintf(stderr, "Server successfully put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
         }
