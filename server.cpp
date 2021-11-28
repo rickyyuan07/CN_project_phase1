@@ -56,7 +56,6 @@ void* serve(void* _fd){
         while(in >> t) v.push_back(t);
         
         if(v[0] == "get"){
-            cerr << v[0] << ' ' << v[1] << endl;
             string serverpath = "./server_dir/" + v[1];
             // file to put does not exist
             if(not exists(serverpath)){
@@ -81,8 +80,6 @@ void* serve(void* _fd){
             write(fd, ins, sizeof(ins));
         }
         else if(v[0] == "put"){
-            // cerr << v[0] << ' ' << v[1] << v.size() << endl;
-
             string serverpath = "./server_dir/" + v[1];
             // read file content from client
             char filebuf[2048] = {};
@@ -110,7 +107,7 @@ void* serve(void* _fd){
             sort(ls_vector.begin(), ls_vector.end());
             string to_client;
             for(string s : ls_vector){
-                to_client += s.substr(13) + "\n";
+                to_client += s.substr(13) + "\n"; // 13 for sizeof("./server_dir/")
             }
             write(fd, to_client.c_str(), 2048);
         }
@@ -156,7 +153,7 @@ int main(int argc, char* argv[]) {
     pthread_t t[client_num];
     while (1) {
         int conn_fd = accept(svr_fd, (struct sockaddr*)&cliaddr, (socklen_t*)&clilen);
-        fprintf(stderr, "getting a new request... fd %d from \n", conn_fd);
+        fprintf(stderr, "getting a new request... fd %d\n", conn_fd);
         pthread_create(t, NULL, serve, (void *)(int64_t)conn_fd);
     }
     return 0;

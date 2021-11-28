@@ -43,29 +43,25 @@ int main(int argc, char *argv[]) {
 
     if (connect(sockfd, (struct sockaddr *)&cliaddr, sizeof(cliaddr)) == -1) ERR_EXIT("connect");
 
-    fprintf(stderr, "\nstarting on %s:%d, fd = %d\n", ip, port, sockfd);
-    
+    fprintf(stderr, "\nClient starts connection to %s:%d, fd = %d\n", ip, port, sockfd); // DEBUG
 
     char buf[100] = {}, name[100] = {};
     recv(sockfd, buf, sizeof(buf), 0);
-    printf("%s\n", buf);
+    printf("%s\n", buf); // input yout username
 
-    scanf("%s", name);
-    write(sockfd, name, sizeof(name));
-    recv(sockfd, buf, sizeof(buf), 0);
-    printf("%s\n", buf);
-    while(strcmp(buf, "username is in used, please try another:") == 0){
+    do{
         scanf("%s", name);
-        write(sockfd, name, sizeof(name));
-        recv(sockfd, buf, sizeof(buf), 0);
-        puts(buf);
+        write(sockfd, name, sizeof(name)); // write size 100 buffer to server
+        recv(sockfd, buf, sizeof(buf), 0); // connect successfully or username is in used
+        printf("%s\n", buf);
     }
+    while(strcmp(buf, "username is in used, please try another:") == 0);
+    
     // instruction
     string s;
-    getline(cin, s); // TODO: why?????
+    getline(cin, s); // get remaining '\n'
     while (1){
-        getline(cin, s);
-        cout << s << endl;
+        getline(cin, s); // get instruction from stdin
         istringstream in(s);
         vector<string> v;
         string t;
@@ -83,7 +79,10 @@ int main(int argc, char *argv[]) {
         if(v[0] == "get"){
             write(sockfd, s.c_str(), 100);
             recv(sockfd, buf, sizeof(buf), MSG_WAITALL);
-            cerr << buf << endl; // debug
+            if(buf[0] == 'T'){ // The %s doesn't exist
+                cout << buf << endl;
+                continue;
+            }
             // read file content from server
             string clientpath = "./client_dir/" + v[1];
             char filebuf[2048] = {};
@@ -102,9 +101,8 @@ int main(int argc, char *argv[]) {
             cout << buf << endl;
         }
         else if(v[0] == "put"){
-            // file to put does not exist
             string clientpath = "./client_dir/" + v[1];
-            if(not exists(clientpath)){
+            if(not exists(clientpath)){ // file to put does not exist
                 printf("The %s doesn't exist\n", v[1].c_str());
                 continue;
             }
@@ -127,9 +125,9 @@ int main(int argc, char *argv[]) {
         }
         else if(v[0] == "ls"){
             write(sockfd, s.c_str(), 100);
-            char lsbuf[2048] = {};
+            char lsbuf[2048] = {}; // buffer for recv ls result from server
             recv(sockfd, lsbuf, sizeof(lsbuf), MSG_WAITALL);
-            cout << lsbuf << endl;
+            puts(lsbuf);
         }
     }
     close(sockfd);
