@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
             write(sockfd, s.c_str(), 100);
             recv(sockfd, buf, sizeof(buf), MSG_WAITALL);
             if(buf[0] == 'T'){ // The %s doesn't exist
-                cout << buf << endl;
+                printf(buf);
                 continue;
             }
             // read file content from server
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
             FILE *wr_fp = fopen(clientpath.c_str(), "wb");
             int filesz;
             recv(sockfd, &filesz, sizeof(filesz), MSG_WAITALL);
-            cout << "got size " << filesz << endl;
+            fprintf(stderr, "get file size = %d\n", filesz);
             while(filesz > 0){
                 int suc = recv(sockfd, filebuf, sizeof(filebuf), MSG_WAITALL);
                 fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);
