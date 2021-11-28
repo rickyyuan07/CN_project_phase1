@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
             write(sockfd, s.c_str(), 100);
             recv(sockfd, buf, sizeof(buf), MSG_WAITALL);
             if(buf[0] == 'T'){ // The %s doesn't exist
-                printf(buf);
+                printf("%s", buf);
                 continue;
             }
             // read file content from server
