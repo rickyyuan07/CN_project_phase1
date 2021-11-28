@@ -92,13 +92,12 @@ int main(int argc, char *argv[]) {
             cout << "got size " << filesz << endl;
             while(filesz > 0){
                 int suc = recv(sockfd, filebuf, sizeof(filebuf), MSG_WAITALL);
-                cout << "remaining: " << filesz << endl;
                 fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);
                 fflush(wr_fp);
                 filesz -= suc;
             }
             recv(sockfd, buf, sizeof(buf), MSG_WAITALL);
-            cout << buf << endl;
+            printf("%s", buf);
         }
         else if(v[0] == "put"){
             string clientpath = "./client_dir/" + v[1];
