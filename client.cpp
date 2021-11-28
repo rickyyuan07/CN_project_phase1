@@ -89,12 +89,12 @@ int main(int argc, char *argv[]) {
             string clientpath = "./client_dir/" + v[1];
             char filebuf[2048] = {};
             FILE *wr_fp = fopen(clientpath.c_str(), "wb");
-            int filesz;
+            long long filesz;
             recv(sockfd, &filesz, sizeof(filesz), MSG_WAITALL);
             // fprintf(stderr, "get file size = %d\n", filesz);
             while(filesz > 0){
-                int suc = recv(sockfd, filebuf, min((int)sizeof(filebuf), filesz), MSG_WAITALL);
-                fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);
+                long long suc = recv(sockfd, filebuf, min((long long)sizeof(filebuf), filesz), MSG_WAITALL);
+                fwrite(filebuf, sizeof(char), min((long long)sizeof(filebuf), filesz), wr_fp);
                 fflush(wr_fp);
                 filesz -= suc;
             }
@@ -108,14 +108,14 @@ int main(int argc, char *argv[]) {
                 continue;
             }
             write(sockfd, s.c_str(), MSGSIZE); // write ins, filename to server
-            int filesz = file_size(clientpath);
+            long long filesz = file_size(clientpath);
             write(sockfd, &filesz, sizeof(filesz));
             // put the file to server
             char filebuf[2048] = {};
             FILE *put_fp = fopen(clientpath.c_str(), "rb");
-            while(fread(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), put_fp) > 0){
-                int suc = write(sockfd, filebuf, min((int)sizeof(filebuf), filesz)); // write file content
-                if (suc != min((int)sizeof(filebuf), filesz)){
+            while(fread(filebuf, sizeof(char), min((long long)sizeof(filebuf), filesz), put_fp) > 0){
+                long long suc = write(sockfd, filebuf, min((long long)sizeof(filebuf), filesz)); // write file content
+                if (suc != min((long long)sizeof(filebuf), filesz)){
                     cerr << "remain: " << filesz << endl;
                 }
                 filesz -= suc;

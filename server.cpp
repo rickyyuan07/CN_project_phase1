@@ -69,15 +69,15 @@ void* serve(void* _fd){
             }
             // fprintf(stderr, "To client %d: server start uploading \"%s\"\n", sockfd, v[1].c_str()); // DEBUG
             
-            int filesz = file_size(serverpath);
+            long long filesz = file_size(serverpath);
             write(sockfd, &filesz, sizeof(filesz));
             // get the file from server
             char filebuf[2048] = {};
             FILE *put_fp = fopen(serverpath.c_str(), "rb");
             int cnt = 0;
-            while(fread(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), put_fp) > 0){
-                int suc = send(sockfd, filebuf, min((int)sizeof(filebuf), filesz), MSG_NOSIGNAL);
-                if(suc < 0 or suc != min((int)sizeof(filebuf), filesz)){ // write file content
+            while(fread(filebuf, sizeof(char), min((long long)sizeof(filebuf), filesz), put_fp) > 0){
+                long long suc = send(sockfd, filebuf, min((long long)sizeof(filebuf), filesz), MSG_NOSIGNAL);
+                if(suc < 0 or suc != min((long long)sizeof(filebuf), filesz)){ // write file content
                     // fprintf(stderr, "\nclient %d has closed, file transmission stops\n", sockfd);
                     fclose(put_fp);
                     user_id_set.erase(name);
@@ -97,19 +97,19 @@ void* serve(void* _fd){
             // read file content from client
             char filebuf[2048] = {};
             FILE *wr_fp = fopen(serverpath.c_str(), "wb");
-            int filesz;
+            long long filesz;
             recv(sockfd, &filesz, sizeof(filesz), MSG_WAITALL);
             // fprintf(stderr, "put from client %d: file name \"%s\" with size = %d\n", sockfd, v[1].c_str(), filesz); // DEBUG
             int cnt = 0;
             while(filesz > 0){
-                int suc = recv(sockfd, filebuf, min((int)sizeof(filebuf), filesz), MSG_WAITALL);
+                long long suc = recv(sockfd, filebuf, min((long long)sizeof(filebuf), filesz), MSG_WAITALL);
                 // if(suc != sizeof(filebuf)){
                     // fprintf(stderr, "\ndid not receive correct number of bytes, only get: %d\n", suc);
                 // }
                 if(suc <= 0){ // client already closed
                     return 0;
                 }
-                fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);
+                fwrite(filebuf, sizeof(char), min((long long)sizeof(filebuf), filesz), wr_fp);
                 fflush(wr_fp);
                 filesz -= suc;
                 cnt++;
