@@ -16,37 +16,36 @@
 #include <vector>
 #include <algorithm>
 
+#define ERR_EXIT(a) do { perror(a); exit(1); } while(0)
+const int MSGSIZE = 100;
+
 using namespace std;
 using namespace filesystem;
-
-#define ERR_EXIT(a) do { perror(a); exit(1); } while(0)
 
 set<string> user_id_set;
 void* serve(void* _fd){
     int sockfd = (int64_t)_fd;
-    write(sockfd, "input your username:", sizeof("input your username:"));
-    char name[100] = {};
+    send(sockfd, "input your username:", MSGSIZE, MSG_NOSIGNAL);
+    char name[MSGSIZE] = {};
     recv(sockfd, name, sizeof(name), MSG_WAITALL);
     while (user_id_set.count(name) == 1){
-        write(sockfd, "username is in used, please try another:", sizeof("username is in used, please try another:"));
+        send(sockfd, "username is in used, please try another:", MSGSIZE, MSG_NOSIGNAL);
         recv(sockfd, name, sizeof(name), MSG_WAITALL);
     }
-    write(sockfd, "connect successfully", sizeof("connect successfully"));
-    string tmp(name);
-    user_id_set.insert(tmp);
+    send(sockfd, "connect successfully", MSGSIZE, MSG_NOSIGNAL);
+    user_id_set.insert(string(name));
 
     while (1) {
-        char ins[100] = {};
+        char ins[MSGSIZE] = {};
         // check if socket is still alive
-        int tmp = recv(sockfd, ins, sizeof(ins), MSG_PEEK);
-        if(tmp == 0){
-            fprintf(stderr, "client fd: %d has closed.\n", sockfd);
+        if(recv(sockfd, ins, sizeof(ins), MSG_PEEK) <= 0){
+            fprintf(stderr, "client fd: %d has closed.\n", sockfd); // DEBUG
             user_id_set.erase(name);
             break;
         }
         
         recv(sockfd, ins, sizeof(ins), MSG_WAITALL);
-        fprintf(stderr, "got message from client %d typed: \"%s\" size 100=%d\n", sockfd, ins, tmp); // DEBUG
+        fprintf(stderr, "got message from client %d typed: \"%s\"n", sockfd, ins); // DEBUG
 
         string s(ins);
         istringstream in(s);
@@ -54,20 +53,21 @@ void* serve(void* _fd){
         string t;
         while(in >> t) v.push_back(t);
         
+        char response[MSGSIZE] = {};
         if(v[0] == "get"){
             string serverpath = "./server_dir/" + v[1];
             // file to put does not exist
             if(not exists(serverpath)){
-                sprintf(ins, "The %s doesn't exist\n", v[1].c_str());
-                write(sockfd, ins, sizeof(ins));
+                sprintf(response, "The %s doesn't exist\n", v[1].c_str());
+                write(sockfd, response, sizeof(response));
                 fprintf(stderr, "To client %d: file: \"%s\" not exists\n", sockfd, v[1].c_str()); // DEBUG
                 continue;
             }
             else{
-                sprintf(ins, "file exists, start downloading\n");
-                write(sockfd, ins, sizeof(ins));
-                fprintf(stderr, "To client %d: server start uploading \"%s\"\n", sockfd, v[1].c_str()); // DEBUG
+                sprintf(response, "file exists, start downloading\n");
+                write(sockfd, response, sizeof(response));
             }
+            fprintf(stderr, "To client %d: server start uploading \"%s\"\n", sockfd, v[1].c_str()); // DEBUG
             
             int filesz = file_size(serverpath);
             write(sockfd, &filesz, sizeof(filesz));
@@ -81,10 +81,11 @@ void* serve(void* _fd){
                     user_id_set.erase(name);
                     return 0;
                 }
+                fprintf(stderr, "."); // DEBUG
             }
             fclose(put_fp);
-            sprintf(ins, "get %s successfully\n", v[1].c_str());
-            send(sockfd, ins, sizeof(ins), MSG_NOSIGNAL);
+            sprintf(response, "get %s successfully\n", v[1].c_str());
+            send(sockfd, response, sizeof(response), MSG_NOSIGNAL);
             fprintf(stderr, "To client %d: file: \"%s\" get successfully\n", sockfd, v[1].c_str()); // DEBUG
         }
         else if(v[0] == "put"){
@@ -98,9 +99,9 @@ void* serve(void* _fd){
             while(filesz > 0){
                 int suc = recv(sockfd, filebuf, sizeof(filebuf), MSG_WAITALL);
                 if(suc != sizeof(filebuf)){
-                    cerr << "did not receive correct number of bytes: " << sizeof(filebuf) << endl;
+                    cerr << "did not receive correct number of bytes, only get: " << suc << endl;
                 }
-                if(suc < 0){ // client already closed
+                if(suc <= 0){ // client already closed
                     return 0;
                 }
                 fwrite(filebuf, sizeof(char), min((int)sizeof(filebuf), filesz), wr_fp);

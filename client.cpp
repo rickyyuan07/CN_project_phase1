@@ -1,5 +1,5 @@
 
-#include <arpa/inet.h>  // for htonl() htons() ntohl() ntohs()
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +16,8 @@
 #include <filesystem>
 
 #define ERR_EXIT(a) do { perror(a); exit(1); } while(0)
+const int MSGSIZE = 100;
+
 using namespace std;
 using namespace filesystem;
 
@@ -45,7 +47,7 @@ int main(int argc, char *argv[]) {
 
     fprintf(stderr, "\nClient starts connection to %s:%d, fd = %d\n", ip, port, sockfd); // DEBUG
 
-    char buf[100] = {}, name[100] = {};
+    char buf[MSGSIZE] = {}, name[MSGSIZE] = {};
     recv(sockfd, buf, sizeof(buf), 0);
     printf("%s\n", buf); // input yout username
 
@@ -77,7 +79,7 @@ int main(int argc, char *argv[]) {
         }
 
         if(v[0] == "get"){
-            write(sockfd, s.c_str(), 100);
+            write(sockfd, s.c_str(), MSGSIZE);
             recv(sockfd, buf, sizeof(buf), MSG_WAITALL);
             if(buf[0] == 'T'){ // The %s doesn't exist
                 printf("%s", buf);
@@ -105,7 +107,7 @@ int main(int argc, char *argv[]) {
                 printf("The %s doesn't exist\n", v[1].c_str());
                 continue;
             }
-            write(sockfd, s.c_str(), 100); // write ins, filename to server
+            write(sockfd, s.c_str(), MSGSIZE); // write ins, filename to server
             int filesz = file_size(clientpath);
             write(sockfd, &filesz, sizeof(filesz));
             // put the file to server
@@ -123,7 +125,7 @@ int main(int argc, char *argv[]) {
             printf("put %s successfully\n", v[1].c_str());
         }
         else if(v[0] == "ls"){
-            write(sockfd, s.c_str(), 100);
+            write(sockfd, s.c_str(), MSGSIZE);
             char lsbuf[2048] = {}; // buffer for recv ls result from server
             recv(sockfd, lsbuf, sizeof(lsbuf), MSG_WAITALL);
             printf("%s", lsbuf);
