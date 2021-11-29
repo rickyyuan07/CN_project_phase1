@@ -1,3 +1,10 @@
-all:
-	g++ -std=c++17 ./client.cpp -o client.exe -Wall -Wextra
-	g++ -std=c++17 ./server.cpp -o server.exe -lpthread -Wall -Wextra
+all: client.cpp server.cpp
+	g++ -pthread -o server server.cpp -Wall -Wextra -std=gnu++17
+	g++ -o client client.cpp -Wall -Wextra -std=gnu++17
+client: client.cpp
+	g++ -o client client.cpp -Wall -Wextra -std=gnu++17
+server: server.cpp
+	g++ -pthread -o server server.cpp -Wall -Wextra -std=gnu++17
+
+clean:
+	rm -f client server
