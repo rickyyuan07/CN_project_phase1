@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sys/stat.h>
 
 #include <iostream>
 #include <filesystem>
@@ -21,6 +22,14 @@ const int MSGSIZE = 100;
 
 using namespace std;
 using namespace filesystem;
+
+unsigned long long get_file_size(string path)
+{
+    struct stat64 file_info;
+    if (stat64(path.c_str(), &file_info) == 0)
+        return file_info.st_size;
+    return 0;
+}
 
 set<string> user_id_set;
 void* serve(void* _fd){
@@ -69,7 +78,7 @@ void* serve(void* _fd){
             }
             // fprintf(stderr, "To client %d: server start uploading \"%s\"\n", sockfd, v[1].c_str()); // DEBUG
             
-            long long filesz = file_size(serverpath);
+            long long filesz = get_file_size(serverpath);
             write(sockfd, &filesz, sizeof(filesz));
             // get the file from server
             char filebuf[2048] = {};

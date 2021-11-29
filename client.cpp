@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include <string>
 #include <iostream>
@@ -20,6 +21,14 @@ const int MSGSIZE = 100;
 
 using namespace std;
 using namespace filesystem;
+
+unsigned long long get_file_size(string path)
+{
+    struct stat64 file_info;
+    if (stat64(path.c_str(), &file_info) == 0)
+        return file_info.st_size;
+    return 0;
+}
 
 int main(int argc, char *argv[]) {
     create_directories("./client_dir");
@@ -108,7 +117,7 @@ int main(int argc, char *argv[]) {
                 continue;
             }
             write(sockfd, s.c_str(), MSGSIZE); // write ins, filename to server
-            long long filesz = file_size(clientpath);
+            long long filesz = get_file_size(clientpath);
             write(sockfd, &filesz, sizeof(filesz));
             // put the file to server
             char filebuf[2048] = {};
